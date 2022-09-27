@@ -1,11 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using PdfSharp.Drawing;
-using PdfSharp.Pdf;
 
 namespace Benchmarking
 {
@@ -13,13 +8,14 @@ namespace Benchmarking
 
     class BenchmarkData
     {
+        public string title;
         public int runs;
         public int tests;
-        public BenchmarkRunData[] testData = new BenchmarkRunData[0];
+        public BenchmarkRunData testData;
 
         public BenchmarkData(int runs, int tests) { }
 
-        public BenchmarkData(int runs, int tests, BenchmarkRunData[] testData)
+        public BenchmarkData(int runs, int tests, BenchmarkRunData testData)
         {
             this.runs = runs;
             this.tests = tests;
@@ -36,14 +32,17 @@ namespace Benchmarking
             Console.WriteLine("+-----------------------------+");
             Console.WriteLine($"Total execution time: {totalTime}ms.");
 
-            if (avg > 1)
+            if (avg >= 1)
                 Console.WriteLine($"Average execution time: {avg}ms.");
             else
                 Console.WriteLine($"Average execution time: < 1ms.");
 
-            Console.WriteLine($"Highest execution time: {highest}ms.");
+            if (highest >= 1)
+                Console.WriteLine($"Highest execution time: {highest}ms.");
+            else
+                Console.WriteLine($"Highest execution time: < 1ms.");
 
-            if(lowest > 1)
+            if(lowest >= 1)
                 Console.WriteLine($"Lowest execution time: {lowest}ms.");
             else
                 Console.WriteLine($"Lowest execution time: < 1ms.");
@@ -52,24 +51,15 @@ namespace Benchmarking
 
         public int TotalExecutionTime()
         {
-            int output = 0;
-            for (int i = 0; i < testData.Length; i++)
-            {
-                output += testData[i].TotalExecutionTime();
-            }
-
-            return output;
+            return testData.TotalExecutionTime();
         }
 
         public int LowestExecutionTime()
         {
             int lowest = int.MaxValue;
-            for (int i = 0; i < testData.Length; i++)
-            {
-                int min = testData[i].LowestExecutionTime();
-                if (lowest > min)
-                    lowest = min;
-            }
+            int min = testData.LowestExecutionTime();
+            if (lowest > min)
+                lowest = min;
 
             return lowest;
         }
@@ -77,12 +67,9 @@ namespace Benchmarking
         public int HighestExecutionTime()
         {
             int highest = 0;
-            for (int i = 0; i < testData.Length; i++)
-            {
-                int max = testData[i].LowestExecutionTime();
-                if (highest < max)
-                    highest = max;
-            }
+            int max = testData.HighestExecutionTime();
+            if (highest < max)
+                highest = max;
 
             return highest;
         }
@@ -186,31 +173,23 @@ namespace Benchmarking
         /// <param name="function">Enter the function you want to run or use () => { and enter your code here }</param>
         /// <param name="runs">How many times should your code run</param>
         /// <param name="tests">How many times should we test your code</param>
-        public static BenchmarkData Run(CodeSnippet function, int runs, int tests, bool showProgress = false)
+        public static BenchmarkData Run(string title, CodeSnippet function, int runs, int tests, bool showProgress = false)
         {
             stopWatch = new Stopwatch();
-            BenchmarkData data = new BenchmarkData(runs, tests, new BenchmarkRunData[tests]);
-            for(int test = 0; test < tests; test++)
-            {
-                data.testData[test] = new BenchmarkRunData();
-            }
+            BenchmarkData data = new BenchmarkData(runs, tests, new BenchmarkRunData());
+            data.title = title;
 
-            for (int test = 0; test < tests; test++)
-            {
-                data.testData[test].executionTimes = new int[runs];
+            data.testData.executionTimes = new int[runs];
 
-                stopWatch.Start();
-                for (int i = 0; i < runs; i++)
-                {
-                    stopWatch.Restart();
-                    function();
-                    stopWatch.Stop();
-                    data.testData[test].executionTimes[i] = (int)MathF.Round(stopWatch.ElapsedMilliseconds);
-                }
+            stopWatch.Start();
+            for (int i = 0; i < runs; i++)
+            {
                 stopWatch.Restart();
-                if (showProgress)
-                    Console.WriteLine($"{MathF.Round((test + 1f) / tests * 100f * 10f) / 10f}%");
+                function();
+                stopWatch.Stop();
+                data.testData.executionTimes[i] = (int)MathF.Round(stopWatch.ElapsedMilliseconds);
             }
+            stopWatch.Restart();
 
             return data;
         }

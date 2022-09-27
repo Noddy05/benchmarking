@@ -1,48 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
 using Benchmarking;
+using PDF;
+
+struct Graph
+{
+    public float xSum;
+    public float ySum;
+    public float xySum;
+    public float xSqSum;
+    public float ySqSum;
+    public float n;
+    public float a;
+    public float b;
+    public float r;
+    public float r2;
+}
 
 class Code
 {
     static void Main()
     {
-        //Testing the speed of arrays, vs lists
+        BenchmarkData data = Benchmark.Run("Console.WriteLine", () => {
 
-        BenchmarkData data = Benchmark.Run(() => {
+            Console.WriteLine("a");
 
-            List<int> list = new List<int>();
+        }, 200, 1);
 
-            int iL = 100;
-            int jL = 1000;
-            for (int i = 0; i < iL; i++)
-            {
-                for (int j = 0; j < jL; j++)
-                    list.Add(j + i * jL);
-            }
+        BenchmarkData data2 = Benchmark.Run("Console.Clear", () => {
 
-        }, 20000, 1);
+            Console.Clear();
 
-        data.Print();
+        }, 20, 1);
 
-        data = Benchmark.Run(() => {
-
-            int iL = 100;
-            int jL = 1000;
-
-            int[] array = new int[jL];
-            for (int i = 0; i < iL; i++)
-            {
-                array = new int[(i + 1) * jL];
-                for (int j = 0; j < array.Length; j++)
-                    array[j] = j;
-            }
-
-        }, 20000, 1);
-
-        data.Print();
-
-        //PDF.Generate(data);
-
+        PDFHandler.NewPDF();
+        PDFHandler.Generate(new BenchmarkData[]{ data, data2 });
+        
         while (true) ;
     }
+
+    
 }
